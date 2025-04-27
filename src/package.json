@@ -1,0 +1,20 @@
+{
+  "name": "devtinder",
+  "version": "1.0.0",
+  "description": "making fullstack project",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "noe",
+    "js",
+    "react",
+    "js"
+  ],
+  "author": "balram prajapati",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
