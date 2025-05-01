@@ -1,7 +1,29 @@
 const express = require('express');
 const connectDb = require('./config/db');
+const modApi = require('./src/modles/user');
 
 const app = express();
+
+// Middleware to parse JSON request body
+app.use(express.json());
+
+app.post("/signup", async (req, res) => {
+   try {
+      const modapi = new modApi({
+         firstname: "radhe",
+         lastname: "prajapti",
+         email: "jems@499.gmail",
+          password: "123456",
+
+      });
+
+      await modapi.save();
+      res.send("Data saved successfully");
+   } catch (error) {
+      console.error("Error saving data:", error.message);
+      res.status(500).send("Internal Server Error");
+   }
+});
 
 // Connect to the database
 connectDb()
