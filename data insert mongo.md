@@ -1,6 +1,6 @@
 const express = require('express');
 const connectDb = require('./config/db');
-const User = require('./src/modles/user');
+const modApi = require('./src/modles/user');
 
 const app = express();
 
@@ -8,14 +8,16 @@ const app = express();
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
-
-  console.log("Request body:", req.body); // Log the request body for debugging
-
-  const user =new User(req.body);
-
    try {
-    
-      await user.save();
+      const modapi = new modApi({
+         firstname: "radhe",
+         lastname: "prajapti",
+         email: "jems@499.gmail",
+          password: "123456",
+
+      });
+
+      await modapi.save();
       res.send("Data saved successfully");
    } catch (error) {
       console.error("Error saving data:", error.message);
@@ -38,5 +40,3 @@ connectDb()
   });
 
 
-
-  //manily  by the using of postman we are saving data into db by using post method
