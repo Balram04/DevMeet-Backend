@@ -11,7 +11,8 @@ app.post("/signup", async (req, res) => {
 
   console.log("Request body:", req.body); // Log the request body for debugging
 
-  const user =new User(req.body);
+  const user =new User(req.body); // creat new instance of user model 
+  
 
    try {
     
