@@ -1,6 +1,6 @@
 const express = require('express');
 const connectDb = require('./config/db');
-const User = require('./src/modles/user');
+const Usea = require('./src/modles/user');
 
 const app = express();
 
@@ -10,7 +10,7 @@ app.use(express.json());
 app.get("/signup", async (req, res) => {
   try {
     // Await the result of User.find()
-    const users = await User.find({ email: req.body.email });
+    const users = await Usea.find({ email: req.body.email });
 
     if (users.length === 0) {
       return res.status(400).send({ message: "User not found" });
@@ -22,6 +22,18 @@ app.get("/signup", async (req, res) => {
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
+
+app.delete("/delet", async (req,res) =>{
+  try{
+
+    const Duser = await Usea.findByIdAndDelete(req.body._id);
+    res.send("user deleted")
+  }catch(err){
+    res.status(400).send("something is wrong")
+;
+  }
+});
+
 
 // Connect to the database
 connectDb()
