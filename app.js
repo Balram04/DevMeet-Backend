@@ -34,6 +34,34 @@ app.delete("/delet", async (req,res) =>{
   }
 });
 
+app.post("/post", async (req, res) => {
+  try {
+    // Create a new user instance with the request body
+    const user = new Usea(req.body);
+    // Save the user to the database
+    await user.save();
+    res.status(201).send(user); // Send the created user as a response
+  } catch (error) {
+    console.error("Error in /post route:", error.message);
+    res.status(400).send({ message: "Bad Request" });
+  }
+});
+
+app.patch("/update", async (req, res) => {  //put and patch are same but put is used to update the whole data and patch is used to update the specific data
+               //put will behave like patch untill we not {ovewrite:true}
+  try {
+    // Find the user by ID and update it with the request body
+    const updatedUser = await Usea.findByIdAndUpdate(req.body._id, req.body, { new: true });  
+    if (!updatedUser) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    res.status(200).send(updatedUser); // Send the updated user as a response
+  }
+  catch (error) {
+    console.error("Error in /update route:", error.message);
+    res.status(400).send({ message: "Bad Request" });
+  }
+}); 
 
 // Connect to the database
 connectDb()
