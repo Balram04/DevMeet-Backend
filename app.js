@@ -1,78 +1,86 @@
 const express = require('express');
 const connectDb = require('./config/db');
-const Usea = require('./src/modles/user');
-
 const app = express();
+const bcrypt = require('bcrypt'); // Import bcrypt
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken'); // Import JWT
+// const authMiddleware = require('./src/routes/auth'); // Corrected import
+const User = require('./src/modles/user'); // Corrected file path
+const {authMiddleware} = require('./src/routes/auth');
 
-// Middleware to parse JSON request body
 app.use(express.json());
+app.use(cookieParser()); // Use cookie-parser middleware
 
-app.get("/signup", async (req, res) => {
+// Signup route
+app.post("/signup", async (req, res) => {
   try {
-    // Await the result of User.find()
-    const users = await Usea.find({ email: req.body.email });
+    const { firstname, lastname, email, password } = req.body;
 
-    if (users.length === 0) {
-      return res.status(400).send({ message: "User not found" });
-    } else {
-      return res.status(200).send(users);
-    }
-  } catch (error) {
-    console.error("Error in /signup route:", error.message);
-    res.status(500).send({ message: "Internal Server Error" });
-  }
-});
+    const pswrdhashed = await bcrypt.hash(password, 12);
 
-app.delete("/delet", async (req,res) =>{
-  try{
+    const user = new User({
+      firstname,
+      lastname,
+      email,
+      password: pswrdhashed, // Hash the password before saving
+    });
 
-    const Duser = await Usea.findByIdAndDelete(req.body._id);
-    res.send("user deleted")
-  }catch(err){
-    res.status(400).send("something is wrong")
-;
-  }
-});
-
-app.post("/post", async (req, res) => {
-  try {
-    // Create a new user instance with the request body
-    const user = new Usea(req.body);
     // Save the user to the database
     await user.save();
     res.status(201).send(user); // Send the created user as a response
   } catch (error) {
-    console.error("Error in /post route:", error.message);
-    res.status(400).send({ message: "Bad Request" });
+    console.error("Error in /signup route:", error.message);
+    res.status(400).send({ message: "Error occurred during signup. Please try again." });
   }
 });
 
-app.patch("/update", async (req, res) => {  //put and patch are same but put is used to update the whole data and patch is used to update the specific data
-               //put will behave like patch untill we not {ovewrite:true}
+// Login route
+app.post("/login", async (req, res) => {
   try {
-    // Find the user by ID and update it with the request body
-    const updatedUser = await Usea.findByIdAndUpdate(req.body._id, req.body, { new: true });  
-    if (!updatedUser) {
-      return res.status(404).send({ message: "User not found" });
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res.status(400).send({ message: "Invalid email or password" });
     }
-    res.status(200).send(updatedUser); // Send the updated user as a response
+
+    const pswrdisMatch = await bcrypt.compare(password, user.password);
+    if (!pswrdisMatch) {
+      return res.status(400).send({ message: "Invalid email or password" });
+    }
+
+    const token = await jwt.sign({ _id: user._id }, "ramlal@123",{expiresIn:"1D"}); // Use env variable for secret
+    res.cookie("token", token);
+    res.status(200).send({ message: "Login successful" });
+  } catch (error) {
+    console.error("Error occurred:", error.message);
+    res.status(500).send({ message: "Internal server issue!" });
   }
-  catch (error) {
-    console.error("Error in /update route:", error.message);
-    res.status(400).send({ message: "Bad Request" });
+});
+//rpofile route
+app.get("/profile",authMiddleware, async (req, res,next) => {
+  try {
+    const user = req.user; // Access the user from the request object
+    if (!user) {
+      return res.status(401).send({ message: "User not found" });
+    }
+
+    res.send(user);
+  } catch (error) {
+    console.error("Error occurred:", error.message);
+    res.status(500).send({ message: "Internal server issue!" });
   }
-}); 
+});
 
 // Connect to the database
 connectDb()
   .then(() => {
     console.log('Database connection successful');
-    // Start the server after the database connection is established
     app.listen(3000, () => {
       console.log('Server is running on port 3000');
     });
   })
   .catch((err) => {
     console.error('Database connection failed:', err.message);
-    process.exit(1); // Exit the process if the database connection fails
+    process.exit(1);
   });
