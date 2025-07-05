@@ -2,16 +2,16 @@ const mongoose =require('mongoose');
 
 const userSchema = new mongoose.Schema ({
     firstname:{
-        type:String,
-        required:true,
-        
+        type:String,        
      },
+     
      adress:{
         type:String,
 
      },
     lastname:{
-        type:String,
+         type:String,
+        
      },
     email:{
         type:String,
@@ -31,6 +31,13 @@ const userSchema = new mongoose.Schema ({
         type:Date,
         default:Date.now
      },
+     skills:{
+        type:[String],
+     },
+    photoUrl: {
+      type: String,
+      default: "", // can be filled by OAuth image
+    },
      
 },
 {
@@ -40,3 +47,6 @@ const userSchema = new mongoose.Schema ({
 
 module.exports = mongoose.model('User',userSchema);
 // const mongoose = require('mongoose');    
+
+
+ 

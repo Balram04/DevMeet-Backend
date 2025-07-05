@@ -1,76 +1,35 @@
 const express = require('express');
 const connectDb = require('./config/db');
 const app = express();
-const bcrypt = require('bcrypt'); // Import bcrypt
+const bcrypt =require('bcrypt'); // Import bcrypt
+const cors =require('cors'); // Import CORS
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken'); // Import JWT
 // const authMiddleware = require('./src/routes/auth'); // Corrected import
-const User = require('./src/modles/user'); // Corrected file path
-const {authMiddleware} = require('./src/routes/auth');
+const User = require('./src/models/user'); // Corrected file path
+const {authMiddleware} = require('./src/middlewares/auth');
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+})); // Use CORS middleware
 
 app.use(express.json());
 app.use(cookieParser()); // Use cookie-parser middleware
 
-// Signup route
-app.post("/signup", async (req, res) => {
-  try {
-    const { firstname, lastname, email, password } = req.body;
+// Signup route // Login route
+const authRouter = require('./src/routes/auth');
+//profile route
+const proRouter = require('./src/routes/profile');
+//connection request route
+const reqRouter = require('./src/routes/cnrequest');
 
-    const pswrdhashed = await bcrypt.hash(password, 12);
+app.use('/', authRouter);
+app.use('/', proRouter);
+app.use('/', reqRouter);
 
-    const user = new User({
-      firstname,
-      lastname,
-      email,
-      password: pswrdhashed, // Hash the password before saving
-    });
 
-    // Save the user to the database
-    await user.save();
-    res.status(201).send(user); // Send the created user as a response
-  } catch (error) {
-    console.error("Error in /signup route:", error.message);
-    res.status(400).send({ message: "Error occurred during signup. Please try again." });
-  }
-});
 
-// Login route
-app.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email: email });
-    if (!user) {
-      return res.status(400).send({ message: "Invalid email or password" });
-    }
-
-    const pswrdisMatch = await bcrypt.compare(password, user.password);
-    if (!pswrdisMatch) {
-      return res.status(400).send({ message: "Invalid email or password" });
-    }
-
-    const token = await jwt.sign({ _id: user._id }, "ramlal@123",{expiresIn:"1D"}); // Use env variable for secret
-    res.cookie("token", token);
-    res.status(200).send({ message: "Login successful" });
-  } catch (error) {
-    console.error("Error occurred:", error.message);
-    res.status(500).send({ message: "Internal server issue!" });
-  }
-});
-//rpofile route
-app.get("/profile",authMiddleware, async (req, res,next) => {
-  try {
-    const user = req.user; // Access the user from the request object
-    if (!user) {
-      return res.status(401).send({ message: "User not found" });
-    }
-
-    res.send(user);
-  } catch (error) {
-    console.error("Error occurred:", error.message);
-    res.status(500).send({ message: "Internal server issue!" });
-  }
-});
 
 // Connect to the database
 connectDb()
