@@ -26,11 +26,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 8
     },
-    phone: {
-      type: String,
-      required: true,
-      unique: true
-    },
+    
     age: {
       type: Number
     },

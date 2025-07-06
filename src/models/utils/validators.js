@@ -15,12 +15,14 @@ const signupvalidation = (req) => {
 const validprofiledata = (req) => {
    // signupvalidation(req); // Validate email, firstname, lastname, and password
   const allowedEditFields = {
-      firstname:true,
-      lastname:true,
-      email:true,
-      skills:true,
-
-      
+      firstname: true,
+      lastname: true,
+      email: true,
+      skills: true,
+      age: true,
+      gender: true,
+      about: true,
+      photoUrl: true,
   };
 
   const isEditAllowed = Object.keys(req.body).every((key) => {
@@ -28,7 +30,8 @@ const validprofiledata = (req) => {
   });
 
   if (!isEditAllowed) {
-    throw new Error("Invalid fields provided for profile update.");
+    const invalidFields = Object.keys(req.body).filter(key => !allowedEditFields[key]);
+    throw new Error(`Invalid fields provided for profile update: ${invalidFields.join(', ')}`);
   }
 
   return true; // Return true if validation passes

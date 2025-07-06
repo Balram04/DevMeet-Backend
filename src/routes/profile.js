@@ -22,23 +22,33 @@ proRouter.get("/profile/view", authMiddleware, async (req, res) => {
 
 proRouter.patch("/profile/edit", authMiddleware, async (req, res) => {
   try {
+    console.log("Received profile edit request:", req.body);
     validprofiledata(req); // Validate profile data
 
     const loggedInUser = req.user;
+    const { firstname, lastname, email, age, gender, about, skills, photoUrl } = req.body;
 
-    // Update user fields
-   Object.keys(req.body).forEach((key) => {
-  if (req.body[key] !== undefined && req.body[key] !== null) {
-    loggedInUser[key] = req.body[key];
-  }
-    });
+    // Update only the fields that are provided
+    if (firstname !== undefined) loggedInUser.firstname = firstname;
+    if (lastname !== undefined) loggedInUser.lastname = lastname;
+    if (email !== undefined) loggedInUser.email = email;
+    if (age !== undefined) loggedInUser.age = age;
+    if (gender !== undefined) loggedInUser.gender = gender;
+    if (about !== undefined) loggedInUser.about = about;
+    if (skills !== undefined) loggedInUser.skills = skills;
+    if (photoUrl !== undefined) loggedInUser.photoUrl = photoUrl;
 
+    console.log("User before save:", loggedInUser);
     await loggedInUser.save(); // Save updated user
+    console.log("User after save:", loggedInUser);
+    
     res.status(200).send({
-      message: `${loggedInUser.firstname}, your Profile updated successfully`, 
-       user: loggedInUser });
+      message: `${loggedInUser.firstname}, your profile updated successfully!`, 
+      user: loggedInUser 
+    });
   } catch (error) {
     console.error("Error occurred:", error.message);
+    console.error("Full error:", error);
     res.status(400).send({ message: error.message });
   }
 });
