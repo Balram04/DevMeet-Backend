@@ -23,10 +23,13 @@ const authRouter = require('./src/routes/auth');
 const proRouter = require('./src/routes/profile');
 //connection request route
 const reqRouter = require('./src/routes/cnrequest');
+// feed route
+const feedRouter = require('./src/routes/feed');
 
 app.use('/', authRouter);
 app.use('/', proRouter);
 app.use('/', reqRouter);
+app.use('/', feedRouter);
 
 
 

@@ -1,67 +1,90 @@
-const express =require("express");
+const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const User = require('../models/user'); // Corrected file path
-const {signupvalidation} = require("../models/utils/validators");
+const User = require("../models/user"); // Your user schema
+const { signupvalidation } = require("../models/utils/validators");
 
-const  authRouter=express.Router();
+const authRouter = express.Router();
 
-authRouter.post("/signup",async (req, res) => {
+// ✅ SIGNUP ROUTE
+authRouter.post("/signup", async (req, res) => {
   try {
     signupvalidation(req);
-    const { firstname, lastname, email, password,skills ,PhotoUrl} = req.body;
 
-    const pswrdhashed = await bcrypt.hash(password, 10);
+    const {
+      firstname,
+      lastname,
+      email,
+      password,
+      phone,
+      age,
+      gender,
+      about,
+      skills,
+      photoUrl
+    } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).send({ message: "Email already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       firstname,
       lastname,
       email,
+      password: hashedPassword,
+      phone,
+      age,
+      gender,
+      about,
       skills,
-      PhotoUrl,
-      password: pswrdhashed, // Hash the password before saving
+      photoUrl
     });
 
-    // Save the user to the database
     await user.save();
-    res.status(201).send(user); // Send the created user as a response
+    res.status(201).send({ message: "User registered successfully", user });
   } catch (error) {
     console.error("Error in /signup route:", error.message);
-    res.status(400).send({ message: "Error occurred during signup. Please try again." });
+    res.status(400).send({ message: "Signup failed. Please check details and try again." });
   }
 });
 
+// ✅ LOGIN ROUTE
 authRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email: email });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).send({ message: "Invalid email or password" });
     }
-    
-     const pswrdisMatch = await bcrypt.compare(password, user.password);
-    if (!pswrdisMatch) {
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(400).send({ message: "Invalid email or password" });
     }
 
-    const token = await jwt.sign({_id:user._id},'ramlal@123' ,{expiresIn:'4d'});
+    const token = jwt.sign({ _id: user._id }, "ramlal@123", { expiresIn: "4d" });
     res.cookie("token", token);
-    res.status(200).send({ message: "Login successful by", user });
+    res.status(200).send({ message: "Login successful", user });
   } catch (error) {
-    console.error("Error occurred:", error.message);
-    res.status(500).send({ message: "Internal server issue!" });
+    console.error("Login error:", error.message);
+    res.status(500).send({ message: "Internal server error" });
   }
 });
 
-authRouter.post('/logout',async (req, res) => {
+// ✅ LOGOUT ROUTE
+authRouter.post("/logout", (req, res) => {
   try {
-    res.clearCookie("token",null ,{expires:new Date(Date.now())});
+    res.clearCookie("token", null, { expires: new Date(Date.now()) });
     res.status(200).send({ message: "Logout successful" });
-    
   } catch (error) {
-    console.error("Error occurred:", error.message);
-    res.status(500).send({ message: "Internal server issue!" });
+    console.error("Logout error:", error.message);
+    res.status(500).send({ message: "Internal server error" });
   }
 });
 
