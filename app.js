@@ -1,13 +1,9 @@
 const express = require('express');
 const connectDb = require('./config/db');
 const app = express();
-const bcrypt =require('bcrypt'); // Import bcrypt
 const cors =require('cors'); // Import CORS
 const cookieParser = require('cookie-parser');
-const jwt = require('jsonwebtoken'); // Import JWT
-// const authMiddleware = require('./src/routes/auth'); // Corrected import
-const User = require('./src/models/user'); // Corrected file path
-const {authMiddleware} = require('./src/middlewares/auth');
+
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -22,14 +18,17 @@ const authRouter = require('./src/routes/auth');
 //profile route
 const proRouter = require('./src/routes/profile');
 //connection request route
-const reqRouter = require('./src/routes/cnrequest');
+const reqRouter = require('./src/routes/request');
 // feed route
 const feedRouter = require('./src/routes/feed');
+
+const userRouter =require('./src/routes/user')
 
 app.use('/', authRouter);
 app.use('/', proRouter);
 app.use('/', reqRouter);
 app.use('/', feedRouter);
+app.use('/',userRouter);
 
 
 

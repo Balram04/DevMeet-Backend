@@ -1,17 +1,39 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const { authMiddleware } = require('../middlewares/auth');
 const User = require('../models/user');
+const ConnectionRequest = require('../models/connectionRequest');
 
 const feedRouter = express.Router();
 
-// Get all users for feed (excluding current user)
+// Get all users for feed (excluding current user and users with existing connection requests)
 feedRouter.get("/feed", authMiddleware, async (req, res) => {
   try {
     const loggedInUser = req.user;
     
-    // Get all users except the current logged-in user
+    // Get all connection requests where current user is either sender or receiver
+    const existingConnections = await ConnectionRequest.find({
+      $or: [
+        { fromUserId: loggedInUser._id },
+        { toUserId: loggedInUser._id }
+      ]
+    });
+    
+    // Extract user IDs that should be excluded
+    const excludedUserIds = new Set();
+    excludedUserIds.add(loggedInUser._id.toString()); // Add current user
+    
+    existingConnections.forEach(connection => {
+      excludedUserIds.add(connection.fromUserId.toString());
+      excludedUserIds.add(connection.toUserId.toString());
+    });
+    
+    // Convert Set to Array for MongoDB query
+    const excludedUserIdsArray = Array.from(excludedUserIds).map(id => new mongoose.Types.ObjectId(id));
+    
+    // Get all users except the current logged-in user and users with existing connections
     const users = await User.find({ 
-      _id: { $ne: loggedInUser._id } 
+      _id: { $nin: excludedUserIdsArray } 
     }).select("-password -confirmpassword"); // Exclude password fields for security
     
     res.status(200).send({
@@ -33,9 +55,29 @@ feedRouter.get("/feed/paginated", authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     
+    // Get all connection requests where current user is either sender or receiver
+    const existingConnections = await ConnectionRequest.find({
+      $or: [
+        { fromUserId: loggedInUser._id },
+        { toUserId: loggedInUser._id }
+      ]
+    });
+    
+    // Extract user IDs that should be excluded
+    const excludedUserIds = new Set();
+    excludedUserIds.add(loggedInUser._id.toString()); // Add current user
+    
+    existingConnections.forEach(connection => {
+      excludedUserIds.add(connection.fromUserId.toString());
+      excludedUserIds.add(connection.toUserId.toString());
+    });
+    
+    // Convert Set to Array for MongoDB query
+    const excludedUserIdsArray = Array.from(excludedUserIds).map(id => new mongoose.Types.ObjectId(id));
+    
     // Get users with pagination
     const users = await User.find({ 
-      _id: { $ne: loggedInUser._id } 
+      _id: { $nin: excludedUserIdsArray } 
     })
     .select("-password -confirmpassword")
     .skip(skip)
@@ -44,7 +86,7 @@ feedRouter.get("/feed/paginated", authMiddleware, async (req, res) => {
     
     // Get total count for pagination info
     const totalUsers = await User.countDocuments({ 
-      _id: { $ne: loggedInUser._id } 
+      _id: { $nin: excludedUserIdsArray } 
     });
     
     res.status(200).send({
