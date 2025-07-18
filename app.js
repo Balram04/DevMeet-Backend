@@ -3,6 +3,8 @@ const connectDb = require('./config/db');
 const app = express();
 const cors =require('cors'); // Import CORS
 const cookieParser = require('cookie-parser');
+const http =require("http")
+const HandleSocket = require('./src/routes/Socket'); // Import the Socket handler
 
 
 app.use(cors({
@@ -22,7 +24,7 @@ const reqRouter = require('./src/routes/request');
 // feed route
 const feedRouter = require('./src/routes/feed');
 
-const userRouter =require('./src/routes/user')
+const userRouter =require('./src/routes/user');
 
 app.use('/', authRouter);
 app.use('/', proRouter);
@@ -31,13 +33,15 @@ app.use('/', feedRouter);
 app.use('/',userRouter);
 
 
+const server = http.createServer(app);
+HandleSocket(server);
 
 
 // Connect to the database
 connectDb()
   .then(() => {
     console.log('Database connection successful');
-    app.listen(3000, () => {
+    server.listen(3000, () => {
       console.log('Server is running on port 3000');
     });
   })
