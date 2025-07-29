@@ -45,7 +45,7 @@ authRouter.post("/signup", async (req, res) => {
       photoUrl
     });
 
-    await user.save();
+    await user.save(); //to save data into Db
     res.status(201).send({ message: "User registered successfully", user });
   } catch (error) {
     console.error("Error in /signup route:", error.message);
