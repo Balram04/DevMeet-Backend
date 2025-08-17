@@ -70,20 +70,25 @@ authRouter.post("/login", async (req, res) => {
 
     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "4d" });
     
-    // Set cookie with production-safe options
-    const isProduction = process.env.NODE_ENV === 'production';
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction, // HTTPS only in production
-      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin
-      maxAge: 4 * 24 * 60 * 60 * 1000, // 4 days
-      path: '/', // Ensure cookie is available for all paths
-      domain: isProduction ? undefined : 'localhost' // Let browser handle domain in production
-    };
-    
-    console.log('Setting cookie with options:', cookieOptions);
-    res.cookie("token", token, cookieOptions);
-    res.status(200).send({ message: "Login successful", user });
+    // For production, send token in response body instead of cookie
+    if (process.env.NODE_ENV === 'production') {
+      res.status(200).send({ 
+        message: "Login successful", 
+        user,
+        token // Send token to frontend for storage
+      });
+    } else {
+      // For local development, still use cookies
+      const cookieOptions = {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 4 * 24 * 60 * 60 * 1000 // 4 days
+      };
+      
+      res.cookie("token", token, cookieOptions);
+      res.status(200).send({ message: "Login successful", user });
+    }
   } catch (error) {
     console.error("Login error:", error.message);
     res.status(500).send({ message: "Internal server error" });
@@ -93,13 +98,12 @@ authRouter.post("/login", async (req, res) => {
 // ✅ LOGOUT ROUTE
 authRouter.post("/logout", (req, res) => {
   try {
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    };
+    // For local development, clear cookies
+    if (process.env.NODE_ENV !== 'production') {
+      res.clearCookie("token");
+    }
     
-    res.clearCookie("token", cookieOptions);
+    // For production, just send success (frontend will remove token from storage)
     res.status(200).send({ message: "Logout successful" });
   } catch (error) {
     console.error("Logout error:", error.message);
