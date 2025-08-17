@@ -7,6 +7,11 @@ const cookieParser = require('cookie-parser');
 const http =require("http")
 const HandleSocket = require('./src/routes/Socket'); // Import the Socket handler
 
+// Trust proxy for production (important for Render)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:5174'],
@@ -15,6 +20,25 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser()); // Use cookie-parser middleware
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    message: 'DevMeet Backend is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'DevMeet API Server',
+    version: '1.0.0',
+    status: 'Running'
+  });
+});
 
 // Signup route // Login route
 const authRouter = require('./src/routes/auth');
@@ -43,8 +67,11 @@ connectDb()
   .then(() => {
     console.log('Database connection successful');
     const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+    const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+    
+    server.listen(PORT, HOST, () => {
+      console.log(`Server is running on ${HOST}:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   })
   .catch((err) => {
