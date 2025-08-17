@@ -71,13 +71,17 @@ authRouter.post("/login", async (req, res) => {
     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "4d" });
     
     // Set cookie with production-safe options
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 4 * 24 * 60 * 60 * 1000 // 4 days
+      secure: isProduction, // HTTPS only in production
+      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin
+      maxAge: 4 * 24 * 60 * 60 * 1000, // 4 days
+      path: '/', // Ensure cookie is available for all paths
+      domain: isProduction ? undefined : 'localhost' // Let browser handle domain in production
     };
     
+    console.log('Setting cookie with options:', cookieOptions);
     res.cookie("token", token, cookieOptions);
     res.status(200).send({ message: "Login successful", user });
   } catch (error) {
