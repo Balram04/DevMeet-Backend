@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const connectDb = require('./config/db');
 const app = express();
@@ -8,7 +9,7 @@ const HandleSocket = require('./src/routes/Socket'); // Import the Socket handle
 
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 })); // Use CORS middleware
 
@@ -41,8 +42,9 @@ HandleSocket(server);
 connectDb()
   .then(() => {
     console.log('Database connection successful');
-    server.listen(3000, () => {
-      console.log('Server is running on port 3000');
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
     });
   })
   .catch((err) => {

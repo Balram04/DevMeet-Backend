@@ -68,7 +68,7 @@ authRouter.post("/login", async (req, res) => {
       return res.status(400).send({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ _id: user._id }, "ramlal@123", { expiresIn: "4d" });
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "4d" });
     res.cookie("token", token);
     res.status(200).send({ message: "Login successful", user });
   } catch (error) {

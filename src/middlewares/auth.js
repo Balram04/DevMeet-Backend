@@ -8,7 +8,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).send({ message: "Unauthorized: No token provided" });
     }
 
-    const isvalid = jwt.verify(token, "ramlal@123"); // Use env variable for secret
+    const isvalid = jwt.verify(token, process.env.JWT_SECRET); // Use env variable for secret
     if (!isvalid) {
       return res.status(401).send({ message: "Unauthorized: Invalid token" });
     }

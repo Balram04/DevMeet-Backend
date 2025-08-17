@@ -1,6 +1,8 @@
 const express = require('express');
 const { authMiddleware } = require('../middlewares/auth');
 const { validprofiledata } = require('../models/utils/validators');
+const upload = require('../../config/multer');
+const { uploadToCloudinary, deleteFromCloudinary, extractPublicId } = require('../utils/cloudinaryUtils');
 const proRouter = express.Router();
 const bcrypt = require('bcrypt'); // Import bcrypt
 
@@ -50,6 +52,58 @@ proRouter.patch("/profile/edit", authMiddleware, async (req, res) => {
     console.error("Error occurred:", error.message);
     console.error("Full error:", error);
     res.status(400).send({ message: error.message });
+  }
+});
+
+// New route for uploading profile photo
+proRouter.post("/profile/upload-photo", authMiddleware, upload.single('photo'), async (req, res) => {
+  try {
+    console.log('Upload photo endpoint hit');
+    console.log('File received:', req.file ? 'Yes' : 'No');
+    console.log('User:', req.user ? req.user.firstname : 'No user');
+
+    if (!req.file) {
+      console.log('No file in request');
+      return res.status(400).send({ message: "No file uploaded" });
+    }
+
+    const loggedInUser = req.user;
+    
+    // Delete old photo from Cloudinary if exists
+    if (loggedInUser.photoUrl) {
+      try {
+        const oldPublicId = extractPublicId(loggedInUser.photoUrl);
+        if (oldPublicId) {
+          console.log('Deleting old photo:', oldPublicId);
+          await deleteFromCloudinary(oldPublicId);
+        }
+      } catch (deleteError) {
+        console.log("Error deleting old photo:", deleteError.message);
+        // Continue with upload even if deletion fails
+      }
+    }
+
+    // Upload new photo to Cloudinary
+    console.log('Uploading to Cloudinary...');
+    const cloudinaryUrl = await uploadToCloudinary(req.file.buffer);
+    console.log('Upload successful:', cloudinaryUrl);
+    
+    // Update user's photo URL
+    loggedInUser.photoUrl = cloudinaryUrl;
+    await loggedInUser.save();
+
+    res.status(200).send({
+      message: "Photo uploaded successfully!",
+      photoUrl: cloudinaryUrl,
+      user: loggedInUser
+    });
+
+  } catch (error) {
+    console.error("Error uploading photo:", error);
+    res.status(500).send({ 
+      message: "Failed to upload photo", 
+      error: error.message 
+    });
   }
 });
 
