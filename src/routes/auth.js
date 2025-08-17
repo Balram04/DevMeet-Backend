@@ -69,7 +69,16 @@ authRouter.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "4d" });
-    res.cookie("token", token);
+    
+    // Set cookie with production-safe options
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 4 * 24 * 60 * 60 * 1000 // 4 days
+    };
+    
+    res.cookie("token", token, cookieOptions);
     res.status(200).send({ message: "Login successful", user });
   } catch (error) {
     console.error("Login error:", error.message);
@@ -80,7 +89,13 @@ authRouter.post("/login", async (req, res) => {
 // ✅ LOGOUT ROUTE
 authRouter.post("/logout", (req, res) => {
   try {
-    res.clearCookie("token", null, { expires: new Date(Date.now()) });
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    };
+    
+    res.clearCookie("token", cookieOptions);
     res.status(200).send({ message: "Logout successful" });
   } catch (error) {
     console.error("Logout error:", error.message);
