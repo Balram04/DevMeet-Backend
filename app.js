@@ -67,11 +67,15 @@ connectDb()
   .then(() => {
     console.log('Database connection successful');
     const PORT = process.env.PORT || 3000;
-    const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+    
+    // Always bind to 0.0.0.0 for deployed environments (like Render)
+    // Only use localhost for local development (port 3000)
+    const HOST = PORT == 3000 ? 'localhost' : '0.0.0.0';
     
     server.listen(PORT, HOST, () => {
       console.log(`Server is running on ${HOST}:${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Host binding: ${HOST}`);
     });
   })
   .catch((err) => {
